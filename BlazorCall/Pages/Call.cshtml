@@ -1,0 +1,41 @@
+﻿@page "/call"
+@inject HttpClient Http
+
+<h1>Call Me Maybe</h1>
+
+<form>
+    <div class="form-group">
+        <label for="twilioNumber">Your Twilio phone number goes here</label>
+        <input class="form-control form-text" type="tel" id="twilioNumber" value="@TwilioNumber" readonly />
+    </div>
+    <div class="form-group">
+        <label for="sourceNumber">Your cell phone number goes here</label>
+        <input class="form-control form-text" type="tel" id="sourceNumber" value="@sourceNumber" placeholder="+1xxxxxxxxxx" />
+    </div>
+    <div class="form-group">
+        <label for="destinationNumber">The number you want to call goes here</label>
+        <input class="form-control form-text" type="tel" id="destinationNumber" bind="@destinationNumber" placeholder="+1xxxxxxxxxx" />
+    </div>
+    <button class="btn btn-primary active" onclick="@PlaceCall">Click me</button>
+</form>
+
+@functions {
+string sourceNumber = "", destinationNumber = "",TwilioNumber = "REPLACE_TWILIO_NUMBER_HERE";
+
+protected async Task PlaceCall()
+{
+    var accountSid = "REPLACE_ACCOUNT_SID_HERE";
+    var authToken = "REPLACE_AUTH_TOKEN_HERE";
+    var bytes = System.Text.Encoding.ASCII.GetBytes($"{accountSid}:{authToken}");
+    var encoded = Convert.ToBase64String(bytes);
+
+    var callTwimlUrl = $"https://handler.twilio.com/twiml/EHb2d71d84d7083a14084747c35b9e3198?destination={destinationNumber}";
+    var stringContent = new StringContent($"From={TwilioNumber}&To={sourceNumber}&Url={callTwimlUrl}", System.Text.Encoding.UTF8, "application/x-www-form-urlencoded");
+
+    Http.DefaultRequestHeaders.Clear();
+    Http.DefaultRequestHeaders.Add("Authorization", $"Basic {encoded}");
+    var uri = new Uri($"https://api.twilio.com/2010-04-01/Accounts/{accountSid}/Calls");
+
+    var response = await Http.PostAsync(uri, stringContent);
+}
+}
